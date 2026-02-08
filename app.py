@@ -25,6 +25,11 @@ if uploaded_file:
     st.write("Columns:", df.columns)
     st.write(df.head())
 
+    st.write("✅ Columns detected:", df.columns.tolist())
+    st.write("✅ Last 5 columns:", df.columns.tolist()[-5:])
+    st.write("✅ Does y exist?:", 'y' in df.columns)
+
+
     if df.shape[1] == 1:
         uploaded_file.seek(0)
         df = pd.read_csv(uploaded_file)  # fallback comma
