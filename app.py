@@ -19,7 +19,12 @@ uploaded_file = st.file_uploader("Upload CSV Test Data", type="csv")
 
 if uploaded_file:
    try:
+    st.write("File uploaded ✅")
     df = pd.read_csv(uploaded_file, sep=';')
+    st.write("Shape:", df.shape)
+    st.write("Columns:", df.columns)
+    st.write(df.head())
+
     if df.shape[1] == 1:
         uploaded_file.seek(0)
         df = pd.read_csv(uploaded_file)  # fallback comma
