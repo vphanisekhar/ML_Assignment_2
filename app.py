@@ -18,7 +18,14 @@ model_name = st.selectbox(
 uploaded_file = st.file_uploader("Upload CSV Test Data", type="csv")
 
 if uploaded_file:
+   try:
     df = pd.read_csv(uploaded_file, sep=';')
+    if df.shape[1] == 1:
+        uploaded_file.seek(0)
+        df = pd.read_csv(uploaded_file)  # fallback comma
+   except Exception:
+    uploaded_file.seek(0)
+    df = pd.read_csv(uploaded_file)  # fallback
 
     if 'y' in df.columns:
         y_true = df['y'].map({'yes': 1, 'no': 0})
