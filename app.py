@@ -6,7 +6,16 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    accuracy_score,
+    roc_auc_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    matthews_corrcoef,
+)
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -34,7 +43,8 @@ MODEL_OPTIONS = [
     "XGBoost"
 ]
 
-def load_csv(uploaded_file: st.runtime.uploaded_file_manager.UploadedFile) -> pd.DataFrame:
+
+def load_csv(uploaded_file) -> pd.DataFrame:
     """
     Load CSV robustly.
     Bank Marketing CSV from UCI is usually ';' separated.
@@ -49,6 +59,18 @@ def load_csv(uploaded_file: st.runtime.uploaded_file_manager.UploadedFile) -> pd
         df = pd.read_csv(uploaded_file)
 
     return df
+
+
+def safe_predict_proba(model, X):
+    """
+    Return probability of positive class if available; else None.
+    """
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba(X)
+        # Binary classification: take probability of class 1
+        if proba is not None and proba.shape[1] >= 2:
+            return proba[:, 1]
+    return None
 
 
 # -----------------------------
@@ -97,8 +119,10 @@ try:
     # 3) Load model
     model_path = os.path.join(MODEL_DIR, f"{model_name}.pkl")
     if not os.path.exists(model_path):
-        st.error(f"❌ Model file not found: {model_path}\n\n"
-                 f"Please ensure you committed model files to GitHub under '{MODEL_DIR}/'.")
+        st.error(
+            f"❌ Model file not found: {model_path}\n\n"
+            f"Please ensure you committed model files to GitHub under '{MODEL_DIR}/'."
+        )
         st.stop()
 
     model = joblib.load(model_path)
@@ -106,12 +130,31 @@ try:
 
     # 4) Predict
     y_pred = model.predict(X)
+    y_prob = safe_predict_proba(model, X)  # used for AUC (if available)
     st.success("✅ Prediction completed")
 
-    # 5) Evaluation outputs
+    # 5) Metrics (Rubric-safe: Accuracy, AUC, Precision, Recall, F1, MCC)
+    acc = accuracy_score(y_true, y_pred)
+    prec = precision_score(y_true, y_pred)
+    rec = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    mcc = matthews_corrcoef(y_true, y_pred)
+    auc = roc_auc_score(y_true, y_prob) if y_prob is not None else None
+
+    st.subheader("📌 Evaluation Metrics")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Accuracy", f"{acc:.4f}")
+    c2.metric("AUC", f"{auc:.4f}" if auc is not None else "N/A")
+    c3.metric("MCC", f"{mcc:.4f}")
+
+    c4, c5, c6 = st.columns(3)
+    c4.metric("Precision", f"{prec:.4f}")
+    c5.metric("Recall", f"{rec:.4f}")
+    c6.metric("F1 Score", f"{f1:.4f}")
+
+    # 6) Report + Confusion Matrix (side-by-side)
     cm = confusion_matrix(y_true, y_pred)
 
-    # Side-by-side layout for clean alignment
     col1, col2 = st.columns(2)
 
     with col1:
