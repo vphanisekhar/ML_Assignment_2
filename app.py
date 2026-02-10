@@ -167,6 +167,9 @@ try:
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=True, ax=ax)
         ax.set_xlabel("Predicted Label")
         ax.set_ylabel("True Label")
+        # ✅ Optional tiny improvement (clarity of 0/1)
+        ax.set_xticklabels(["No (0)", "Yes (1)"])
+        ax.set_yticklabels(["No (0)", "Yes (1)"])
         st.pyplot(fig, use_container_width=False)
 
 except Exception:
